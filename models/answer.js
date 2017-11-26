@@ -4,7 +4,8 @@ const ObjectId = Schema.ObjectId;
 
 const AnswerSchema = new Schema({
     answer: String,
-    date: Date
+    date: Date,
+    user: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 });
 
 AnswerModel = mongoose.model('Answer', AnswerSchema);

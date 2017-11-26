@@ -3,6 +3,8 @@ const router = express.Router();
 const DataModels = require('../models');
 const hashPassword = require('../helpers/hash-password');
 const verifyPassword = require('../helpers/verify-password');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 
 //USE postman for now to create users, questions and answers
 // all routes begin with /api
@@ -14,7 +16,6 @@ const verifyPassword = require('../helpers/verify-password');
 // 	"password": "password"
 // }
 router.post('/login', function(req, res, next){
-  console.log('req.body', req.body);
   const password = req.body.password;
   const email = req.body.email;
   DataModels.User.findOne({email: email})
@@ -66,11 +67,10 @@ router.post('/register', function(req, res, next){
       return DataModels.User.create(user)
     })
     .then(function(result){
-      console.log('result', result);
       return res.json(result);
     })
     .catch(function(err){
-      return res.json(err);
+      return res.status(400).json(err);
     });
 });
 
@@ -82,7 +82,7 @@ router.get('/:userId/questions', function(req, res, next) {
       return res.json(result);
     })
     .catch(function(err){
-      return res.json(err);
+      return res.status(400).json(err);
     });
 });
 
@@ -96,14 +96,34 @@ router.get('/questions', function(req, res, next) {
 
 /* POST question. /api/:userId/question */
 router.post('/:userId/question', function(req, res, next) {
-  const question = req.body.question;
-  question.user = req.params.userId;
-  DataModels.Question.create(question)
-    .then(function(result){
-      return res.json(result);
+  const question = new DataModels.Question({
+    question: req.body.question,
+    user: req.params.userId
+  });
+
+  DataModels.User.findOne({_id: req.params.userId})
+    .then(function(user) {
+      if (user.honestyCredits > 0) {
+        user.honestyCredits--;
+        return user.save()
+          .then(function(result){
+            return DataModels.Question.create(question)
+          })
+          .then(function(result){
+            return res.json(result);
+          })
+          .catch(function(err){
+            return res.status(400).json(err);
+          });
+      } else {
+        return res.json({
+          success: false,
+          error: 'You must purchase more credits to get an answer to this question.'
+        });
+      }
     })
     .catch(function(err){
-      return res.json(err);
+      return res.status(400).json(err);
     });
 });
 
@@ -111,16 +131,21 @@ router.post('/:userId/question', function(req, res, next) {
 
 /* POST answer.  /api/answer  */
 router.post('/answer', function(req, res, next) {
-  const questionId = req.body.answer.questionId;
+  const questionId = req.body.questionId;
+  const answer = new DataModels.Answer({
+    answer: req.body.answer,
+    user: req.body.user //Placeholder: GET USER_ID FROM JWT OR COOKIE HERE'
+  });
+
   DataModels.Answer.create(answer)
     .then(function(result){
-      DataModels.Question.update({question: questionId},{ $set: { answer: result._id }})
+      return DataModels.Question.update({_id: questionId},{ $set: { answer: result._id }})
     })
     .then(function(result){
       return res.json(result);
     })
     .catch(function(err){
-      return res.json(err);
+      return res.status(400).json(err);
     });
 });
 
