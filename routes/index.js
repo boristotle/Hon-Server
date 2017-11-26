@@ -14,25 +14,35 @@ const verifyPassword = require('../helpers/verify-password');
 // 	"password": "password"
 // }
 router.post('/login', function(req, res, next){
+  console.log('req.body', req.body);
   const password = req.body.password;
   const email = req.body.email;
   DataModels.User.findOne({email: email})
     .then(function(result){
-      console.log('result', result);
-      return verifyPassword(password, result.passwordHash)
-        .then(function(result){
-          if (result) {
-            console.log('user successfully loged in', result);
-            return res.json({message: 'user successfully logged in.'});
-            //create json webtoken and log user in
-          } else {
-            return res.json({error: 'Unable to verify user and password.'});
-          }
-        })
-        .catch(function(err){
-          return res.json(err);
-        })
+      if (result === null) {
+        return res.json({success: false, error: 'Unable to verify user and password.'});
+      } else {
+        return verifyPassword(password, result.passwordHash)
+          .then(function(result){
+            if (result) {
+              return res.json({success: true, message: 'user successfully logged in.'});
+              //create json webtoken and log user in
+            } else {
+              return res.json({success: false, error: 'Unable to verify user and password.'});
+            }
+          })
+          .catch(function(err){
+            return res.status(400).json(err);
+          });
+      }
     })
+    .catch(function(err){
+      return res.status(400).json(err);
+    });
+});
+
+router.post('/logout', function(req, res, next){
+  // delete user jwt
 });
 
 
