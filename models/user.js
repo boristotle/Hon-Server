@@ -9,7 +9,8 @@ const UserSchema = new Schema({
     age: Number,
     gender: String,
     tags: [String],
-    email: String //set to unique
+    email: {type: String, unique: true },
+    createdAt: {type: Date, default: Date.now()},
 });
 
 UserModel = mongoose.model('User', UserSchema);

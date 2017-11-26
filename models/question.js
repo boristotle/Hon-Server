@@ -3,8 +3,12 @@ const Schema = mongoose.Schema;
 const ObjectId = Schema.ObjectId;
 
 const QuestionSchema = new Schema({
+    minAge: Number,
+    maxAge: Number,
+    gender: String,
     question: String,
-    date: Date, //need to set default to now
+    tags: [String],
+    createdAt: {type: Date, default: Date.now()},
     answer: [{ type: Schema.Types.ObjectId, ref: 'Answer' }],
     user: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 });

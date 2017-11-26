@@ -4,7 +4,7 @@ const ObjectId = Schema.ObjectId;
 
 const AnswerSchema = new Schema({
     answer: String,
-    date: Date,
+    createdAt: {type: Date, default: Date.now()},
     user: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 });
 

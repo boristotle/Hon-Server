@@ -12,7 +12,7 @@ const ObjectId = mongoose.Types.ObjectId;
 /* LOGIN.  /api/login */
 // SAMPLE DATA FOR POSTMAN
 // {
-// 	"email": "fred@fred.com",
+// 	"email": "bob@bob.com",
 // 	"password": "password"
 // }
 router.post('/login', function(req, res, next){
@@ -55,8 +55,7 @@ router.post('/logout', function(req, res, next){
 // 	"email": "bob@bob.com",
 // 	"password": "password",
 // 	"age": 36,
-// 	"honestyCredits": 0,
-// 	"honestyFreebies": 0
+// 	"honestyCredits": 99,
 // 	}
 // }
 router.post('/register', function(req, res, next){
@@ -88,18 +87,32 @@ router.get('/:userId/questions', function(req, res, next) {
 
 
 /* GET questions for people to answer. */
-router.get('/questions', function(req, res, next) {
-  //get all questions with tags matching anything for that user
-  // as well as gender, age and sex if specified
+router.get('/:userId/unanswered', function(req, res, next) {
+  const userId = req.params.userId; //placeholder, need to get user from cookie or jwt
+  DataModels.User.findOne({_id: userId})
+    .then(function(result){
+      //get all questions with tags matching anything for that user
+      // as well as gender, age and sex if specified
+      return DataModels.Question.find({
+        gender: { $in: [result.gender, 'any'] },
+        minAge: { $lte: result.age},
+        maxAge: { $gte: result.age},
+        tags: { $in: result.tags}
+      });
+    })
+    .then(function(result){
+      return res.json(result);
+    })
+    .catch(function(err){
+      return res.status(400).json(err);
+    })
 });
 
 
 /* POST question. /api/:userId/question */
 router.post('/:userId/question', function(req, res, next) {
-  const question = new DataModels.Question({
-    question: req.body.question,
-    user: req.params.userId
-  });
+  const question = new DataModels.Question(req.body.question);
+  question.user = req.params.userId;
 
   DataModels.User.findOne({_id: req.params.userId})
     .then(function(user) {
